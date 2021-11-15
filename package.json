@@ -1,0 +1,19 @@
+{
+  "name": "lulu-watch",
+  "version": "1.0.0",
+  "description": "Notifier for lululemon items",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ColeBianchi/lulu-watch.git"
+  },
+  "author": "Cole Bianchi",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/ColeBianchi/lulu-watch'/issues"
+  },
+  "homepage": "https://github.com/ColeBianchi/lulu-watch'#readme"
+}
