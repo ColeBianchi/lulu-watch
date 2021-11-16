@@ -1,0 +1,128 @@
+<html>
+	<head>
+		<link href="materialize/css/materialize.min.css" rel="stylesheet">
+		<link href="materialize/css/materialicons.css" rel="stylesheet">
+
+		<style>
+			/* label focus color */
+			.input-field input:focus + label 
+			{
+				color: #f8bbd0 !important;
+			}
+			/* label underline focus color */
+			.row .input-field input:focus 
+			{
+				border-bottom: 1px solid #f8bbd0 !important;
+				box-shadow: 0 1px 0 0 #f8bbd0 !important
+			}
+		</style>
+
+	</head>
+
+	<body class="deep-purple lighten-3">
+		<div class="container">
+			<div class="row">
+				<div class="card deep-purple">
+					<div class="card-content">
+						<div class="row">
+							<div class="input-field">
+								<input id="keyword_input" type="text" class="white-text">
+								<label for="keyword_input" class="white-text">Add a keyword to scan for</label>
+							</div>
+						</div>
+
+						<div id="chips" class=""></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script type="text/javascript" src="materialize/js/materialize.min.js"></script>
+		<script>
+			M.updateTextFields()
+
+			var settings = {}
+			updateSetting("last_use",Date.now(), () =>
+			{
+				initUIElements()
+			}) //Log data and init local settings
+
+			document.getElementById("keyword_input").addEventListener("keydown", (event) =>
+			{
+				var content = document.getElementById("keyword_input").value
+
+				if (event.keyCode == 13) //Enter key pressed
+				{
+					document.getElementById("keyword_input").value = ""
+					M.toast({html: 'Added ' + content + ' to keyword list'})
+
+					addChip(content)
+					settings["keywords"].push(content)
+					updateSetting("keywords", JSON.stringify(settings["keywords"]))
+				}
+				else if (event.keyCode == 32) //Block space key to encourage single words, NOTE: This is not fullproof by any means but does not really need to be
+				{
+					event.preventDefault();
+				}
+			})
+
+			function addChip(keyword)
+			{
+				if (document.getElementById("chips").className == "")
+				{
+					document.getElementById("chips").className = "row"
+				}
+
+				var chipDiv = document.createElement("div")
+				chipDiv.className = "chip pink lighten-5"
+				chipDiv.innerHTML = keyword
+
+				var closeBtn = document.createElement("i")
+				closeBtn.className = "close material-icons"
+				closeBtn.innerHTML = "close"
+				closeBtn.onclick = function(element)
+				{
+					const keyword = this.parentNode.innerHTML.replace('<i class="close material-icons">close</i>', '')
+					const index = settings["keywords"].indexOf(keyword);
+					if (index > -1) 
+					{
+						settings["keywords"].splice(index, 1)
+						updateSetting("keywords", JSON.stringify(settings["keywords"]))
+					}
+				}
+				chipDiv.appendChild(closeBtn)
+
+				document.getElementById("chips").appendChild(chipDiv)
+			}
+
+			/*
+			Updates settings file on server, setting is string, value is stringified JSON, optional callback function to handle updated settings
+			*/
+			function updateSetting(setting, value, callback=function(){})
+			{
+				var xmlHttp = new XMLHttpRequest()
+				xmlHttp.onreadystatechange = function() 
+				{ 
+					if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+					{
+						console.log(xmlHttp.responseText)
+						settings = JSON.parse(xmlHttp.responseText)
+						callback()
+					}
+				}
+
+				xmlHttp.open("GET", "/settings?"+setting+"="+value, true)
+				xmlHttp.send(null)
+			}
+
+			function initUIElements()
+			{
+				//Init keyword chips
+				for (var i = 0; i < settings["keywords"].length; i++)
+				{
+					addChip(settings["keywords"][i])
+				}
+			}
+		</script>
+	</body>
+</html>
