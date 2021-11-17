@@ -1,4 +1,8 @@
+const { Console } = require('console')
 const https = require('https')
+const { Worker } = require('worker_threads')
+
+var last_page = 1
 
 var getlastPage = exports.getLastPage = function (category, callback)
 {

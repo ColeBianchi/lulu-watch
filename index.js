@@ -8,6 +8,32 @@ const cert = fs.readFileSync('certs/cert.pem')
 
 var settings = JSON.parse(fs.readFileSync('settings.json'))
 
+const worker = new Worker('./lulu_service.js', {  })
+worker.on('message', (data) =>
+{
+	console.info("LULUSER | Data received from worker")
+	
+	if (data.message_type == "last_page")
+	{
+		last_page = data.data
+	}
+	else if (data.message_type == "page_data")
+	{
+		
+	}
+})
+worker.on('error', (err) =>
+{
+	console.error("LULUSER | ERROR:" + err)
+})
+worker.on('exit', (code) =>
+{
+	if (code != 0)
+	{
+		console.error("LULUSER | Worker stopped with exit code "+code)
+	}
+})
+
 https.createServer(
 	{
 		key: key,
