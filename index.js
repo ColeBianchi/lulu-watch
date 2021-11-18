@@ -1,38 +1,67 @@
 const https = require('https')
 const fs = require('fs')
 const url = require('url')
+const { Worker } = require('worker_threads')
 const lulu = require('./lulu.js')
 
 const key = fs.readFileSync('certs/key.pem')
 const cert = fs.readFileSync('certs/cert.pem')
 
 var settings = JSON.parse(fs.readFileSync('settings.json'))
+var history = JSON.parse(fs.readFileSync('history.json'))
 
-const worker = new Worker('./lulu_service.js', {  })
-worker.on('message', (data) =>
+var last_page = 1
+
+LuluWorker(last_page, settings) //Start service when server is started
+
+
+function LuluWorker(startPage, config)
 {
-	console.info("LULUSER | Data received from worker")
-	
-	if (data.message_type == "last_page")
+	const workerData = 
 	{
-		last_page = data.data
+		last_page: startPage,
+		settings: config
 	}
-	else if (data.message_type == "page_data")
+
+
+	const worker = new Worker('./lulu_service.js', { workerData: workerData })
+	worker.on('message', (data) =>
 	{
+		console.info("LULUSER | Data received from worker | Type: "+data.message_type)
 		
-	}
-})
-worker.on('error', (err) =>
-{
-	console.error("LULUSER | ERROR:" + err)
-})
-worker.on('exit', (code) =>
-{
-	if (code != 0)
+		if (data.message_type == "page_number")
+		{
+			last_page = data.data
+		}
+		else if (data.message_type == "page_data")
+		{
+			history[config["category"]][last_page] = data.data
+
+			fs.writeFile('history.json', JSON.stringify(history), (err) =>
+			{
+				if (err)
+				{
+					console.error("LULUSER | ERROR: Could not write page data to history table")
+				}
+				else
+				{
+					console.info("LULUSER | Updated page "+last_page+" in "+config["category"]+" history table")
+				}
+			})
+		}
+	})
+	worker.on('error', (err) =>
 	{
-		console.error("LULUSER | Worker stopped with exit code "+code)
-	}
-})
+		console.error("LULUSER | ERROR: " + err)
+	})
+	worker.on('exit', (code) =>
+	{
+		if (code != 0)
+		{
+			console.error("LULUSER | Worker stopped with exit code "+code)
+		}
+	})
+}
 
 https.createServer(
 	{

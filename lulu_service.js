@@ -1,4 +1,4 @@
-const { workerData, parentPort } = require('worker_threads')
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 var lulu = require("./lulu.js")
 
 var nextPage = workerData.last_page
@@ -7,11 +7,12 @@ parentPort.on("message", message =>
 {
 	if (message == "exit")
 	{
-		parentPort.close()
+		console.error("ADD CODE TO KILL THREAD")
 	}
 })
 
-lulu.getLastPage(workerData.settings["category"], (res, err) =>
+
+lulu.getLastPage(workerData.settings.category, (res, err) =>
 {
 	if (err)
 	{
@@ -19,18 +20,18 @@ lulu.getLastPage(workerData.settings["category"], (res, err) =>
 	}
 	else
 	{
-		setTimeout(() =>
+		setInterval(() =>
 		{
 			requestLoop(res)
-		}, workerData.settings["request_timeout"])
+		}, workerData.settings.request_timeout)
 	}
 })
 
 function requestLoop(lastPage)
 {
-	if (workerData.settings["enabled"])
+	if (workerData.settings.enabled)
 	{
-		lulu.requestPageJSON(nextPage, workerData.settings["category"], (res, err) =>
+		lulu.requestPageJSON(nextPage, workerData.settings.category, (res, err) =>
 		{
 			if (err)
 			{
@@ -38,14 +39,15 @@ function requestLoop(lastPage)
 			}
 			else
 			{
+				parentPort.postMessage({ message_type: "page_number", data: nextPage })
+
 				nextPage += 1
 				
 				if (nextPage > lastPage)
 				{
 					nextPage = 1
 				}
-	
-				parentPort.postMessage({ message_type: "last_page", data: nextPage })
+				
 				parentPort.postMessage({ message_type: "page_data", data: res })
 			}
 		})
