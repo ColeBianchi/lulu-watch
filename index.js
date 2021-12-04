@@ -35,7 +35,27 @@ function LuluWorker(startPage, config)
 		}
 		else if (data.message_type == "page_data")
 		{
-			history[config["category"]][last_page] = data.data
+			const items = []
+
+			//Listing data stored at path:
+			//	request.data.attributes.main-content[where type=CDPResultsList].records[0..n]
+			try
+			{
+				//This is confusing, should rename some of these in future
+				for (var i = 0; i < data.data.data.attributes["main-content"].length; i++)
+				{
+					if (data.data.data.attributes["main-content"][i].type == "CDPResultsList")
+					{
+						items.push(data.data.data.attributes["main-content"][i].records)
+					}
+				}
+			}
+			catch
+			{
+				console.error("LULUSER | ERROR: Invalid JSON object received at page "+last_page)
+			}
+
+			history[config["category"]][last_page] = items.flat()
 
 			fs.writeFile('history.json', JSON.stringify(history), (err) =>
 			{
@@ -93,11 +113,6 @@ https.createServer(
 				{
 					res.writeHead(200)
 					res.write(pageNumber)
-
-					for (var i = 1; i <= pageNumber; i++)
-					{
-						
-					}
 				}
 	
 				res.end()
